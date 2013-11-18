@@ -1,6 +1,7 @@
 # Object files
 *.o
 *.ko
+pcap2flow
 
 # Libraries
 *.lib
