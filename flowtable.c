@@ -20,12 +20,13 @@ flowrecord *flow_retrieve(flowtable *cache, flowtable **table, ipv4_tuple *tuple
     table[table_index]->id = table_index;
   } else {
     entry = table[table_index]->head;
-    while (entry != NULL) {
-      if (memcmp(&entry->record->tuple, tuple, sizeof(ipv4_tuple)) == 0) {
-        break;
-      }
-      entry = entry->next;
+  }
+
+  while (entry != NULL) {
+    if (memcmp(&entry->record->tuple, tuple, sizeof(ipv4_tuple)) == 0) {
+      break;
     }
+    entry = entry->next;
   }
 
   /**
@@ -33,12 +34,6 @@ flowrecord *flow_retrieve(flowtable *cache, flowtable **table, ipv4_tuple *tuple
    * then create a new one
    */
   if (entry == NULL) {
-    entry = malloc(sizeof(flow_entry));
-    if (entry == NULL) {
-      fprintf(stderr, "Memory allocation falure\n");
-      exit(-1);
-    }
-    
     fr = malloc(sizeof(flowrecord));
     if (fr == NULL) {
       fprintf(stderr, "Memory allocation falure\n");
@@ -47,7 +42,6 @@ flowrecord *flow_retrieve(flowtable *cache, flowtable **table, ipv4_tuple *tuple
 
     memset(&fr->nf_record, 0, sizeof(nf_v5_record_t));
     memcpy(&fr->tuple, tuple, sizeof(ipv4_tuple));
-    entry->record = fr;
 
     fr->table_id = table_index;
     fr->flow_table.next = NULL;
@@ -103,13 +97,14 @@ void flow_refresh(flowtable *cache, flowrecord *flowrecord) {
    * entry is already at the top
    */
   if (flow_entry->previous != NULL) {
-    /* Remove the entry from the middle of the list */
-    if (flow_entry->previous != NULL && flow_entry->next != NULL) {
-      flow_entry->previous->next = flow_entry->next;
-      flow_entry->next->previous = flow_entry->previous;
-    } else if (flow_entry->next == NULL) {
+    /* Remove the entry from the bottom of the list */
+    if (flow_entry->next == NULL) {
       flow_entry->previous->next = NULL;
       cache->tail = flow_entry->previous;
+    /* Remove the entry from the middle of the list */
+    } else {
+      flow_entry->previous->next = flow_entry->next;
+      flow_entry->next->previous = flow_entry->previous;
     }
     /* Move it to the top of the stack */
     flow_entry->previous = NULL;
