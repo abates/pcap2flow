@@ -42,10 +42,10 @@ void nf_export(nf_peer_t *nf_peer, nf_v5_packet_t *packet, unsigned int num_reco
 
   for (i=0; i<num_records; i++) {
     /* Correct byte ordering */
-    packet->records[num_records].first = htonl(packet->records[num_records].first);
-    packet->records[num_records].last = htonl(packet->records[num_records].last);
-    packet->records[num_records].num_packets = htonl(packet->records[num_records].num_packets);
-    packet->records[num_records].num_bytes = htonl(packet->records[num_records].num_bytes);
+    packet->records[i].first = htonl(packet->records[i].first);
+    packet->records[i].last = htonl(packet->records[i].last);
+    packet->records[i].num_packets = htonl(packet->records[i].num_packets);
+    packet->records[i].num_bytes = htonl(packet->records[i].num_bytes);
   }
 
   int error = sendto( nf_peer->socket, packet, 

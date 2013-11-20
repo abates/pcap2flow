@@ -110,18 +110,11 @@ void flow_expire(nf_peer_t *nf_peer, flowtable *cache, flowtable *table, unsigne
   nf_v5_packet_t nf_packet;
   flowrecord *record;
   unsigned int num_records = 0;
-  //char timestr[20];
-  //time_t record_time = 0;
-  //struct tm tmp;
 
   while(cache->tail != NULL && cache->tail->record->nf_record.last < expiration) {
     export_cache = cache->tail;
     export_table = &export_cache->record->flow_table;
     record = export_cache->record;
-    //record_time = time_epoch_sec() - (time_sysuptime() / 1000) + (record->nf_record.first / 1000);
-    //localtime_r(&record_time, &tmp);
-    //strftime(timestr, 20, "%Y-%m-%d %H:%M:%S", &tmp); 
-    //printf("Flow Export: %s\n", timestr);
 
     memcpy(&nf_packet.records[num_records], &record->nf_record, sizeof(nf_v5_record_t));
 
