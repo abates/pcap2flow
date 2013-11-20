@@ -27,10 +27,10 @@ typedef struct {
   unsigned int id;
 } flowtable;
 
-flowrecord *flow_retrieve(flowtable *cache, flowtable **table, ipv4_tuple *tuple, unsigned int table_len);
+flowrecord *flow_retrieve(flowtable *cache, flowtable *table, ipv4_tuple *tuple, unsigned int table_len);
 void flow_insert(flowtable *cache, flowtable *table, flowrecord *flowrecord);
 void flow_refresh(flowtable *cache, flowrecord *flowrecord);
-void flow_expire(nf_peer_t *nf_peer, flowtable *cache, flowtable **table, unsigned long expiration);
+void flow_expire(nf_peer_t *nf_peer, flowtable *cache, flowtable *table, unsigned long expiration);
 
 #endif
 

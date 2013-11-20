@@ -2,25 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include "nf_time.h"
 #include "flowtable.h"
 #include "netflow.h"
 
-flowrecord *flow_retrieve(flowtable *cache, flowtable **table, ipv4_tuple *tuple, unsigned int table_len) {
-  flow_entry *entry = NULL;
-  flowrecord *fr = NULL;
-
+flowrecord *flow_retrieve(flowtable *cache, flowtable *table, ipv4_tuple *tuple, unsigned int table_len) {
   unsigned int table_index = hash(tuple, 0xebebebeb) % table_len;
-
-  if (table[table_index] == NULL) {
-    table[table_index] = malloc(sizeof(flowtable));
-    if (table[table_index] == NULL) {
-      fprintf(stderr, "Memory allocation failure\n");
-      exit(-1);
-    }
-    table[table_index]->id = table_index;
-  } else {
-    entry = table[table_index]->head;
-  }
+  flow_entry *entry = table[table_index].head;
+  flowrecord *fr = NULL;
 
   while (entry != NULL) {
     if (memcmp(&entry->record->tuple, tuple, sizeof(ipv4_tuple)) == 0) {
@@ -60,7 +50,7 @@ flowrecord *flow_retrieve(flowtable *cache, flowtable **table, ipv4_tuple *tuple
     fr->nf_record.destination_port = tuple->prot.port.destination_port;
     fr->nf_record.protocol = htons(tuple->protocol);
     
-    flow_insert(cache, table[table_index], fr);
+    flow_insert(cache, &table[table_index], fr);
   } else {
     fr = entry->record;
   }
@@ -114,22 +104,26 @@ void flow_refresh(flowtable *cache, flowrecord *flowrecord) {
   }
 }
 
-void flow_expire(nf_peer_t *nf_peer, flowtable *cache, flowtable **table, unsigned long expiration) {
+void flow_expire(nf_peer_t *nf_peer, flowtable *cache, flowtable *table, unsigned long expiration) {
   flow_entry *export_cache;
   flow_entry *export_table;
   nf_v5_packet_t nf_packet;
+  flowrecord *record;
   unsigned int num_records = 0;
+  //char timestr[20];
+  //time_t record_time = 0;
+  //struct tm tmp;
 
   while(cache->tail != NULL && cache->tail->record->nf_record.last < expiration) {
     export_cache = cache->tail;
     export_table = &export_cache->record->flow_table;
-    flowrecord *record = export_cache->record;
+    record = export_cache->record;
+    //record_time = time_epoch_sec() - (time_sysuptime() / 1000) + (record->nf_record.first / 1000);
+    //localtime_r(&record_time, &tmp);
+    //strftime(timestr, 20, "%Y-%m-%d %H:%M:%S", &tmp); 
+    //printf("Flow Export: %s\n", timestr);
+
     memcpy(&nf_packet.records[num_records], &record->nf_record, sizeof(nf_v5_record_t));
-    /* Correct byte ordering */
-    nf_packet.records[num_records].first = htonl(nf_packet.records[num_records].first);
-    nf_packet.records[num_records].last = htonl(nf_packet.records[num_records].last);
-    nf_packet.records[num_records].num_packets = htonl(nf_packet.records[num_records].num_packets);
-    nf_packet.records[num_records].num_bytes = htonl(nf_packet.records[num_records].num_bytes);
 
     num_records++;
 
@@ -140,23 +134,27 @@ void flow_expire(nf_peer_t *nf_peer, flowtable *cache, flowtable **table, unsign
 
     /* Remove the entry from the bottom of the stack */
     cache->tail = export_cache->previous;
+    if (cache->tail != NULL) {
+      cache->tail->next = NULL;
+    }
 
     /* Remove the entry from the flow table */
     if (export_table->next == NULL && export_table->previous == NULL) {
-      free(table[record->table_id]);
-      table[record->table_id] = NULL;
+      table[record->table_id].head = NULL;
+      table[record->table_id].tail = NULL;
     } else if (export_table->previous == NULL) {
       export_table->next->previous = NULL;
-      table[record->table_id]->head = export_table->next;
+      table[record->table_id].head = export_table->next;
     } else if (export_table->next == NULL) {
       export_table->previous->next = NULL;
-      table[record->table_id]->tail = export_table->previous;
+      table[record->table_id].tail = export_table->previous;
     } else {
       export_table->previous->next = export_table->next;
       export_table->next->previous = export_table->previous;
     }
 
-    free(export_cache->record);
+    /* Free the previously allocated record */
+    free(record);
   }
   if (num_records > 0) {
     nf_export(nf_peer, &nf_packet, num_records);

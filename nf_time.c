@@ -1,7 +1,7 @@
 
 
 #include <stdio.h>
-#include "time.h"
+#include "nf_time.h"
 
 static unsigned long epoch_sec;
 static unsigned long epoch_msec;

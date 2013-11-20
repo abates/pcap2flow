@@ -4,7 +4,7 @@
 #include <string.h>
 #include <netinet/if_ether.h>
 #include <pcap/pcap.h>
-#include "time.h"
+#include "nf_time.h"
 #include "hash.h"
 #include "flowtable.h"
 
@@ -12,7 +12,8 @@
 #define FLOW_TIMER 3600000
 
 static flowtable flowcache;
-static flowtable *ftable[FLOW_TABLE_SIZE];
+static flowtable ftable[FLOW_TABLE_SIZE];
+static nf_peer_t nf_peer;
 
 void handle_packet(unsigned char *args, const struct pcap_pkthdr *pkthdr, const unsigned char *p) {
   /* lets start with the ether header... */
@@ -95,6 +96,10 @@ void handle_packet(unsigned char *args, const struct pcap_pkthdr *pkthdr, const 
       break;
     }
   }
+
+  if (time_sysuptime() > FLOW_TIMER) {
+    flow_expire(&nf_peer, &flowcache, ftable, time_sysuptime() - FLOW_TIMER);
+  }
 }
 
 int main(int argc, char **argv) {
@@ -102,7 +107,6 @@ int main(int argc, char **argv) {
   char errbuf[PCAP_ERRBUF_SIZE];
   u_char* args = NULL;
   struct timeval time;
-  nf_peer_t nf_peer;
   struct in_addr peer_ip;
 
   if (argc < 4) {
@@ -126,7 +130,6 @@ int main(int argc, char **argv) {
   pcap_loop(fh, -1, handle_packet, args);
 
   /* Dump reamining flow record */
-  gettimeofday(&time, NULL);
-  flow_expire(&nf_peer, &flowcache, ftable, (time.tv_sec + time.tv_usec / 1000) + FLOW_TIMER);
+  flow_expire(&nf_peer, &flowcache, ftable, time_sysuptime() + FLOW_TIMER);
   return 0;
 }

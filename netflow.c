@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "time.h"
+#include "nf_time.h"
 #include "netflow.h"
 
 static unsigned int total_flows;
@@ -39,6 +39,14 @@ void nf_export(nf_peer_t *nf_peer, nf_v5_packet_t *packet, unsigned int num_reco
   packet->header.engine_type = 0;
   packet->header.engine_id = 0;
   packet->header.sampling_interval = 0;
+
+  for (i=0; i<num_records; i++) {
+    /* Correct byte ordering */
+    packet->records[num_records].first = htonl(packet->records[num_records].first);
+    packet->records[num_records].last = htonl(packet->records[num_records].last);
+    packet->records[num_records].num_packets = htonl(packet->records[num_records].num_packets);
+    packet->records[num_records].num_bytes = htonl(packet->records[num_records].num_bytes);
+  }
 
   int error = sendto( nf_peer->socket, packet, 
                       (sizeof(nf_v5_header_t) + sizeof(nf_v5_record_t) * num_records), 
