@@ -1,11 +1,3 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "nf_time.h"
-#include "flowtable.h"
-#include "netflow.h"
 /* Copyright 2014 Andrew Bates
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "nf_time.h"
+#include "flowtable.h"
+#include "netflow.h"
 
 flowrecord *flow_retrieve(flowtable *cache, flowtable *table, ipv4_tuple *tuple, unsigned int table_len) {
   unsigned int table_index = hash(tuple, 0xebebebeb) % table_len;
