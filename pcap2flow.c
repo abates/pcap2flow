@@ -20,6 +20,7 @@
 #include "nf_time.h"
 #include "hash.h"
 #include "flowtable.h"
+#include <stdlib.h>
 
 #define FLOW_TABLE_SIZE 65536
 #define FLOW_TIMER 3600000
